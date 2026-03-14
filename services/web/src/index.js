@@ -9,6 +9,8 @@ const PORT = process.env.PORT || 3000;
 const MANAGEMENT_API_URL = process.env.MANAGEMENT_API_URL || 'http://customer-management:4000';
 const KAFKA_BROKERS = (process.env.KAFKA_BROKERS || 'kafka:9092').split(',');
 const KAFKA_TOPIC = process.env.KAFKA_TOPIC || 'purchases';
+const PRODUCER_SEND_RETRIES = Number(process.env.PRODUCER_SEND_RETRIES || '6');
+const PRODUCER_RETRY_DELAY_MS = Number(process.env.PRODUCER_RETRY_DELAY_MS || '1000');
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -37,10 +39,39 @@ const kafka = new Kafka({
 const producer = kafka.producer();
 
 async function publishPurchase(purchase) {
-  await producer.send({
-    topic: KAFKA_TOPIC,
-    messages: [{ key: String(purchase.userid), value: JSON.stringify(purchase) }],
-  });
+  let lastError;
+  for (let attempt = 1; attempt <= PRODUCER_SEND_RETRIES; attempt += 1) {
+    try {
+      await producer.send({
+        topic: KAFKA_TOPIC,
+        messages: [{ key: String(purchase.userid), value: JSON.stringify(purchase) }],
+      });
+      return;
+    } catch (error) {
+      lastError = error;
+      const shouldRetry = attempt < PRODUCER_SEND_RETRIES;
+      console.warn(
+        `Kafka publish failed (attempt ${attempt}/${PRODUCER_SEND_RETRIES}): ${error.message}`
+      );
+
+      if (!shouldRetry) {
+        break;
+      }
+
+      if (error.retriable || error.name === 'KafkaJSConnectionError') {
+        try {
+          await producer.disconnect();
+        } catch (_) {
+          // ignore
+        }
+        await connectWithRetry();
+      }
+
+      await sleep(PRODUCER_RETRY_DELAY_MS * attempt);
+    }
+  }
+
+  throw lastError;
 }
 
 app.get('/health', (req, res) => {

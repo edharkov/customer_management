@@ -65,6 +65,8 @@ metadata:
     assignment-uuid: e271b052-9200-4502-b491-62f1649c07
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: kafka
@@ -76,25 +78,6 @@ spec:
         assignment-uuid: e271b052-9200-4502-b491-62f1649c07
     spec:
       enableServiceLinks: false
-      initContainers:
-        - name: wait-for-zookeeper
-          image: busybox:1.36
-          imagePullPolicy: IfNotPresent
-          command:
-            - sh
-            - -c
-            - |
-              echo "Waiting for zookeeper..."
-              attempts=0
-              until printf 'ruok' | nc -w 2 zookeeper 2181 | grep -q imok; do
-                attempts=$((attempts + 1))
-                if [ "$attempts" -gt 90 ]; then
-                  echo "Timed out waiting for zookeeper health check."
-                  exit 1
-                fi
-                sleep 2
-              done
-              echo "zookeeper is ready"
       containers:
         - name: kafka
           image: confluentinc/cp-kafka:7.4.0
@@ -137,6 +120,11 @@ spec:
               port: 9092
             periodSeconds: 5
             failureThreshold: 24
+          livenessProbe:
+            tcpSocket:
+              port: 9092
+            initialDelaySeconds: 30
+            periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service

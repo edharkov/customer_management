@@ -119,6 +119,19 @@ Get all entries (no filter):
 curl "http://<HOST>:<PORT>/getAllUserBuys"
 ```
 
+## GitHub Actions CD (template included)
+
+The workflow [.github/workflows/ci-web.yml](/Users/edhar/git/customer_management/.github/workflows/ci-web.yml) includes an optional CD step after image build:
+
+1. Set Kubernetes access from `KUBECONFIG_DATA` secret (base64-encoded kubeconfig).
+2. Optionally set `KUBE_CONTEXT` to select the kube context.
+3. Patch deployment images using `kubectl patch` for `customer-facing-web` and `customer-management`.
+
+Set these in repository/organization secrets:
+
+- `KUBECONFIG_DATA` (required): base64 kubeconfig content.
+- `KUBE_CONTEXT` (optional): kube context name.
+
 ## Notes / implementation remarks
 
 - The web service is intentionally stateless and only emits events to Kafka.
