@@ -10,6 +10,23 @@ const MANAGEMENT_API_URL = process.env.MANAGEMENT_API_URL || 'http://customer-ma
 const KAFKA_BROKERS = (process.env.KAFKA_BROKERS || 'kafka:9092').split(',');
 const KAFKA_TOPIC = process.env.KAFKA_TOPIC || 'purchases';
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function connectWithRetry() {
+  const delayMs = 3000;
+  while (true) {
+    try {
+      await producer.connect();
+      return;
+    } catch (error) {
+      console.warn(`Retrying producer connect in ${delayMs / 1000}s...`, error.message);
+      await sleep(delayMs);
+    }
+  }
+}
+
 // Remarks:
 // Web service is intentionally simple and stateless; all business state lives in Mongo.
 // It only publishes buy events to Kafka and proxies read requests to management service.
@@ -138,7 +155,7 @@ app.get('/getAllUserBuys', async (req, res) => {
 });
 
 async function bootstrap() {
-  await producer.connect();
+  await connectWithRetry();
   app.listen(PORT, () => {
     console.log(`Customer-facing service listening on ${PORT}`);
   });
