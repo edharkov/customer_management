@@ -82,7 +82,7 @@ app.get('/', (_req, res) => {
       };
       document.getElementById('getBtn').onclick = async () => {
         const username = document.getElementById('username').value.trim();
-        const response = await fetch('/getAllUserBuys' + (username ? `?username=${encodeURIComponent(username)}` : ''));
+        const response = await fetch('/getAllUserBuys' + (username ? '?username=' + encodeURIComponent(username) : ''));
         output.textContent = await response.text();
       };
     </script>

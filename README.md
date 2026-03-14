@@ -47,6 +47,16 @@ and then set imagePullPolicy to `IfNotPresent` in the two deployment files.
 ./k8s/deploy.sh
 ```
 
+If you see old pods still failing after an image fix, run:
+
+```bash
+./k8s/deploy.sh
+kubectl -n customer-system delete pods -l app=customer-facing-web
+kubectl -n customer-system delete pods -l app=customer-management
+kubectl -n customer-system delete pods -l app=kafka
+kubectl -n customer-system delete pods -l app=zookeeper
+```
+
 3. Optional: include Kafka-lag autoscaling by auto-installing KEDA:
 
 ```bash

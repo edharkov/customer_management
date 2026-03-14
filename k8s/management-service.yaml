@@ -22,7 +22,7 @@ spec:
       containers:
         - name: management
           image: obosecbot/customer-management-api:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 4000
           env:

@@ -13,6 +13,7 @@ kubectl apply -f "$SCRIPT_DIR/kafka.yaml"
 kubectl apply -f "$SCRIPT_DIR/management-service.yaml"
 kubectl apply -f "$SCRIPT_DIR/web-service.yaml"
 kubectl apply -f "$SCRIPT_DIR/autoscaling.yaml"
+kubectl rollout restart deployment/customer-management deployment/customer-facing-web deployment/kafka deployment/zookeeper -n "$NAMESPACE"
 
 if kubectl get crd scaledobjects.keda.sh >/dev/null 2>&1; then
   echo "KEDA CRD found. Applying Kafka-lag scaled object."
@@ -40,5 +41,7 @@ fi
 echo "Waiting for deployments to be ready..."
 kubectl -n "$NAMESPACE" rollout status deployment/customer-management --timeout=180s
 kubectl -n "$NAMESPACE" rollout status deployment/customer-facing-web --timeout=180s
+kubectl -n "$NAMESPACE" rollout status deployment/kafka --timeout=180s
+kubectl -n "$NAMESPACE" rollout status deployment/zookeeper --timeout=180s
 
 echo "Deployment complete."
