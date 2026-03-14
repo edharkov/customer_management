@@ -57,6 +57,14 @@ kubectl -n customer-system delete pods -l app=kafka
 kubectl -n customer-system delete pods -l app=zookeeper
 ```
 
+If a pull fails because a fixed image tag disappears, update these lines in:
+
+- [k8s/kafka.yaml](/Users/edhar/git/customer_management/k8s/kafka.yaml)
+
+Current pinned tags:
+- `zookeeper:3.9.2`
+- `confluentinc/cp-kafka:7.4.0`
+
 3. Optional: include Kafka-lag autoscaling by auto-installing KEDA:
 
 ```bash

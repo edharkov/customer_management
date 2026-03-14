@@ -26,6 +26,22 @@ const mongoClient = new MongoClient(MONGO_URI);
 // This keeps the API read-model separate and resilient to web service restarts.
 let collection;
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function bootstrapWithRetry(label, fn, delayMs = 3000) {
+  while (true) {
+    try {
+      await fn();
+      return;
+    } catch (error) {
+      console.error(`Retrying ${label} in ${delayMs / 1000}s...`, error.message);
+      await sleep(delayMs);
+    }
+  }
+}
+
 function normalizeRecord(record) {
   const { _id, ...rest } = record;
   return { ...rest, id: rest.id || String(_id), mongoId: String(_id) };
@@ -81,14 +97,14 @@ async function startKafkaConsumer() {
 }
 
 async function bootstrap() {
-  await mongoClient.connect();
+  await bootstrapWithRetry('MongoDB connect', () => mongoClient.connect());
   const db = mongoClient.db(MONGO_DB);
   collection = db.collection(MONGO_COLLECTION);
 
   await collection.createIndex({ username: 1, timestamp: -1 });
   await collection.createIndex({ id: 1 }, { unique: true, sparse: true });
 
-  await startKafkaConsumer();
+  await bootstrapWithRetry('Kafka consumer', () => startKafkaConsumer());
 
   app.listen(PORT, () => {
     console.log(`Customer management API listening on ${PORT}`);
