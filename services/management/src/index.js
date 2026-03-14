@@ -12,6 +12,8 @@ const MONGO_COLLECTION = process.env.MONGO_COLLECTION || 'purchases';
 const KAFKA_BROKERS = (process.env.KAFKA_BROKERS || 'kafka:9092').split(',');
 const KAFKA_TOPIC = process.env.KAFKA_TOPIC || 'purchases';
 const KAFKA_GROUP_ID = process.env.KAFKA_GROUP_ID || 'customer-management-group';
+const KAFKA_NUM_PARTITIONS = Number(process.env.KAFKA_NUM_PARTITIONS || '1');
+const KAFKA_REPLICATION_FACTOR = Number(process.env.KAFKA_REPLICATION_FACTOR || '1');
 
 const kafka = new Kafka({
   clientId: 'customer-management-api',
@@ -19,6 +21,7 @@ const kafka = new Kafka({
 });
 
 const consumer = kafka.consumer({ groupId: KAFKA_GROUP_ID });
+const admin = kafka.admin();
 const mongoClient = new MongoClient(MONGO_URI);
 
 // Remarks:
@@ -86,8 +89,31 @@ async function onMessage({ topic, partition, message }) {
   }
 }
 
+async function ensureTopic() {
+  await admin.connect();
+  try {
+    const topics = await admin.listTopics();
+    if (!topics.includes(KAFKA_TOPIC)) {
+      await admin.createTopics({
+        topics: [
+          {
+            topic: KAFKA_TOPIC,
+            numPartitions: Math.max(KAFKA_NUM_PARTITIONS, 1),
+            replicationFactor: Math.max(KAFKA_REPLICATION_FACTOR, 1),
+          },
+        ],
+        waitForLeaders: true,
+      });
+      console.log(`Created Kafka topic ${KAFKA_TOPIC}`);
+    }
+  } finally {
+    await admin.disconnect();
+  }
+}
+
 async function startKafkaConsumer() {
   await consumer.connect();
+  await ensureTopic();
   await consumer.subscribe({ topic: KAFKA_TOPIC, fromBeginning: false });
   await consumer.run({
     eachMessage: async (messageContext) => {

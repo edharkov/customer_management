@@ -62,15 +62,27 @@ If a pull fails because a fixed image tag disappears, update these lines in:
 - [k8s/kafka.yaml](/Users/edhar/git/customer_management/k8s/kafka.yaml)
 
 Current pinned tags:
-- `zookeeper:3.9.2`
+- `confluentinc/cp-zookeeper:7.4.0`
 - `confluentinc/cp-kafka:7.4.0`
 
 3. Optional: include Kafka-lag autoscaling by auto-installing KEDA:
 
 ```bash
 ./k8s/deploy.sh --with-keda
+./k8s/deploy.sh --with-keda-crd
+./k8s/deploy.sh --install-keda-crd
 ```
 
+If KEDA still needs manual installation:
+
+```bash
+kubectl apply -f https://github.com/kedacore/keda/releases/download/v2.16.1/keda-2.16.1.yaml
+kubectl -n customer-system rollout status deploy/customer-management --timeout=180s
+kubectl get crd scaledobjects.keda.sh
+```
+
+`--with-keda` installs with Helm when available and applies full KEDA.
+`--with-keda-crd` / `--install-keda-crd` installs the KEDA CRDs and applies the scaled object manifest.
 If you already have KEDA installed, `./k8s/deploy.sh` will detect it and apply the scaled object automatically.
 
 4. Access the UI:

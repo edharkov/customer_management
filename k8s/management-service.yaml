@@ -40,6 +40,10 @@ spec:
               value: "purchases"
             - name: KAFKA_GROUP_ID
               value: "customer-management-group"
+            - name: KAFKA_NUM_PARTITIONS
+              value: "1"
+            - name: KAFKA_REPLICATION_FACTOR
+              value: "1"
           readinessProbe:
             httpGet:
               path: /health
