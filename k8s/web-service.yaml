@@ -21,8 +21,8 @@ spec:
     spec:
       containers:
         - name: web
-          image: customer-facing-web:latest
-          imagePullPolicy: IfNotPresent
+          image: obosecbot/customer-facing-web:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           env:
