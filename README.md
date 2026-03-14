@@ -47,6 +47,43 @@ and then set imagePullPolicy to `IfNotPresent` in the two deployment files.
 ./k8s/deploy.sh
 ```
 
+### Run everything from project root
+
+From the repository root, the full local flow is:
+
+```bash
+# 1) Start minikube and point Docker to minikube daemon (for local image builds)
+minikube start
+eval "$(minikube docker-env)"
+
+# 2) Build local images for both services
+docker build -t obosecbot/customer-facing-web:latest -f services/web/Dockerfile services/web
+docker build -t obosecbot/customer-management-api:latest -f services/management/Dockerfile services/management
+
+# 3) Deploy all manifests (namespace, mongo, kafka, services, autoscaling)
+./k8s/deploy.sh
+
+# 4) Open the UI
+minikube service customer-facing-web -n customer-system
+```
+
+If you prefer pulling from Docker Hub instead of local images, use:
+
+```bash
+docker pull obosecbot/customer-facing-web:latest
+docker pull obosecbot/customer-management-api:latest
+./k8s/deploy.sh
+```
+
+If pod images are stale after local build, restart pods:
+
+```bash
+kubectl -n customer-system delete pod -l app=customer-facing-web
+kubectl -n customer-system delete pod -l app=customer-management
+kubectl -n customer-system delete pod -l app=kafka
+kubectl -n customer-system delete pod -l app=zookeeper
+```
+
 If you see old pods still failing after an image fix, run:
 
 ```bash
