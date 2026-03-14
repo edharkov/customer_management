@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: customer-system
+  labels:
+    app.kubernetes.io/name: customer-management
+    assignment-uuid: e271b052-9200-4502-b491-62f1649c07

@@ -1,0 +1,10 @@
+{
+  "name": "customer-management-home-assignment",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Random purchase flow with Kafka, MongoDB and Kubernetes",
+  "scripts": {
+    "start:web": "node services/web/src/index.js",
+    "start:management": "node services/management/src/index.js"
+  }
+}

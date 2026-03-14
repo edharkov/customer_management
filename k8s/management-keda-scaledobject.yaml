@@ -1,0 +1,23 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: customer-management-kafka-scaler
+  namespace: customer-system
+  labels:
+    app: customer-management
+    role: backend
+    assignment-uuid: e271b052-9200-4502-b491-62f1649c07
+spec:
+  scaleTargetRef:
+    name: customer-management
+  pollingInterval: 10
+  cooldownPeriod: 60
+  minReplicaCount: 1
+  maxReplicaCount: 8
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: kafka:9092
+        consumerGroup: customer-management-group
+        topic: purchases
+        lagThreshold: "10"

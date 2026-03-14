@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-management
+  namespace: customer-system
+  labels:
+    app: customer-management
+    role: backend
+    assignment-uuid: e271b052-9200-4502-b491-62f1649c07
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-management
+  template:
+    metadata:
+      labels:
+        app: customer-management
+        role: backend
+        assignment-uuid: e271b052-9200-4502-b491-62f1649c07
+    spec:
+      containers:
+        - name: management
+          image: customer-management-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4000
+          env:
+            - name: PORT
+              value: "4000"
+            - name: MONGO_URI
+              value: "mongodb://mongo:27017/customerdb"
+            - name: MONGO_DB
+              value: "customerdb"
+            - name: MONGO_COLLECTION
+              value: "purchases"
+            - name: KAFKA_BROKERS
+              value: "kafka:9092"
+            - name: KAFKA_TOPIC
+              value: "purchases"
+            - name: KAFKA_GROUP_ID
+              value: "customer-management-group"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-management
+  namespace: customer-system
+  labels:
+    app: customer-management
+    role: backend
+    assignment-uuid: e271b052-9200-4502-b491-62f1649c07
+spec:
+  selector:
+    app: customer-management
+  ports:
+    - port: 4000
+      targetPort: 4000

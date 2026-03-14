@@ -1,0 +1,54 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: customer-facing-web-hpa
+  namespace: customer-system
+  labels:
+    app: customer-facing-web
+    role: frontend
+    assignment-uuid: e271b052-9200-4502-b491-62f1649c07
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: customer-facing-web
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: customer-management-hpa
+  namespace: customer-system
+  labels:
+    app: customer-management
+    role: backend
+    assignment-uuid: e271b052-9200-4502-b491-62f1649c07
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: customer-management
+  minReplicas: 1
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 55

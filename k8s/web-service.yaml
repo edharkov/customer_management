@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-facing-web
+  namespace: customer-system
+  labels:
+    app: customer-facing-web
+    role: frontend
+    assignment-uuid: e271b052-9200-4502-b491-62f1649c07
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-facing-web
+  template:
+    metadata:
+      labels:
+        app: customer-facing-web
+        role: frontend
+        assignment-uuid: e271b052-9200-4502-b491-62f1649c07
+    spec:
+      containers:
+        - name: web
+          image: customer-facing-web:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: MANAGEMENT_API_URL
+              value: "http://customer-management:4000"
+            - name: KAFKA_BROKERS
+              value: "kafka:9092"
+            - name: KAFKA_TOPIC
+              value: "purchases"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-facing-web
+  namespace: customer-system
+  labels:
+    app: customer-facing-web
+    role: frontend
+    assignment-uuid: e271b052-9200-4502-b491-62f1649c07
+spec:
+  selector:
+    app: customer-facing-web
+  type: NodePort
+  ports:
+    - port: 3000
+      targetPort: 3000
+      nodePort: 30080

@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo
+  namespace: customer-system
+  labels:
+    app: mongo
+    role: database
+    assignment-uuid: e271b052-9200-4502-b491-62f1649c07
+spec:
+  serviceName: mongo
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+        role: database
+        assignment-uuid: e271b052-9200-4502-b491-62f1649c07
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:7.0
+          args: ["--dbpath", "/data/db"]
+          ports:
+            - containerPort: 27017
+          env:
+            - name: MONGO_INITDB_DATABASE
+              value: customerdb
+          volumeMounts:
+            - name: mongo-data
+              mountPath: /data/db
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+  volumeClaimTemplates:
+    - metadata:
+        name: mongo-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+  namespace: customer-system
+  labels:
+    app: mongo
+    role: database
+    assignment-uuid: e271b052-9200-4502-b491-62f1649c07
+spec:
+  selector:
+    app: mongo
+  ports:
+    - name: mongo
+      port: 27017
+      targetPort: 27017
