@@ -23,32 +23,37 @@
 
 ## Run on Kubernetes (Minikube)
 
-1. Build the Docker images in Minikube's registry:
+1. Build and push Docker images to Docker Hub (CI already publishes both images):
 
 ```bash
-minikube image build -t customer-facing-web:latest -f services/web/Dockerfile services/web
-minikube image build -t customer-management-api:latest -f services/management/Dockerfile services/management
+docker build -t obosecbot/customer-facing-web:latest -f services/web/Dockerfile services/web
+docker build -t obosecbot/customer-management-api:latest -f services/management/Dockerfile services/management
+docker push obosecbot/customer-facing-web:latest
+docker push obosecbot/customer-management-api:latest
 ```
 
-2. Apply common resources:
+If your images are built locally only, use Minikube image build and switch to local-only pull policy first:
 
 ```bash
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/mongo.yaml
-kubectl apply -f k8s/kafka.yaml
-kubectl apply -f k8s/management-service.yaml
-kubectl apply -f k8s/web-service.yaml
-kubectl apply -f k8s/autoscaling.yaml
+minikube image build -t obosecbot/customer-facing-web:latest -f services/web/Dockerfile services/web
+minikube image build -t obosecbot/customer-management-api:latest -f services/management/Dockerfile services/management
 ```
 
-3. Optional Kafka-lag autoscaling (recommended for this use case):
+and then set imagePullPolicy to `IfNotPresent` in the two deployment files.
+
+2. Deploy Kubernetes resources with one command (namespace + dependencies in correct order):
 
 ```bash
-helm repo add kedacore https://kedacore.github.io/charts
-helm repo update
-helm install keda kedacore/keda --namespace keda --create-namespace
-kubectl apply -f k8s/management-keda-scaledobject.yaml
+./k8s/deploy.sh
 ```
+
+3. Optional: include Kafka-lag autoscaling by auto-installing KEDA:
+
+```bash
+./k8s/deploy.sh --with-keda
+```
+
+If you already have KEDA installed, `./k8s/deploy.sh` will detect it and apply the scaled object automatically.
 
 4. Access the UI:
 
